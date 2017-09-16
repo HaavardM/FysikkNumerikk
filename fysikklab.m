@@ -17,16 +17,19 @@ THETA = pi / 6; %30 grader
 %Akselerasjon som funksjon av vinkel og konstant
 v_dot = @(theta, c) (g * sin(theta))/(1 + c); 
 
+%Forhåndsallokerer minne
 t = zeros(1, endTime / h);
 v = zeros(1, endTime / h);
 s = zeros(1, endTime / h);
 
+%Løser differensialligningen numerisk med faste tidssteg (h)
 for i = 1 : endTime / h
    v(i + 1) = v(i) + h*v_dot(THETA, C_kule);
    s(i + 1) = s(i) + h*v(i);
    t(i + 1) = t(i) + h;
 end
 
+%Lager en figur og plotter dataen
 figure(1);
 plot(t, v);
 hold on;
