@@ -23,7 +23,7 @@ v_dot = @(theta, c) (g * sin(theta))/(1 + c);
 NUM_SIMS = numel(C_values);
 
 %Forhåndsallokerer minne
-for i = 1:3
+for i = 1 : NUM_SIMS
    t(i, :) = zeros(1, endTime / h);
    v(i, :) = zeros(1, endTime / h);
    s(i, :) = zeros(1, endTime / h); 
