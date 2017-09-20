@@ -22,14 +22,14 @@ v_dot = @(theta, c) (g * sin(theta))/(1 + c);
 %Antall simuleringer
 NUM_SIMS = numel(C_values);
 
-%ForhÃ¥ndsallokerer minne
+%Forhåndsallokerer minne
 for i = 1:3
    t(i, :) = zeros(1, endTime / h);
    v(i, :) = zeros(1, endTime / h);
    s(i, :) = zeros(1, endTime / h); 
 end
 
-%LÃ¸ser differensialligningen numerisk med faste tidssteg (h)
+%Løser differensialligningen numerisk med faste tidssteg (h)
 
 for simNr = 1 : NUM_SIMS
     for i = 1 : endTime / h
