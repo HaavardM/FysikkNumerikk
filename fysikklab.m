@@ -2,7 +2,7 @@ clear all; close all; clc;
 
 %Simuleringsparametre
 h = 0.01; %Tidssteg
-endTime = 1;
+endTime = 3;
 %Tyngeakselerasjon
 g = 9.81;
 
@@ -13,8 +13,9 @@ C_sylinder = 1;
 C_values = [C_kule, C_skall, C_sylinder];
 
 %Plan konstanter
-THETA = pi / 6; %30 grader - vinkel på plan 
-L = 1; % i meter - lengden på planet
+DEG = 4.65;%Grader
+THETA = deg2rad(DEG); %vinkel på plan i radianer 
+L = 1.29; % i meter - lengden på planet
 
 %Akselerasjon som funksjon av vinkel og konstant
 v_dot = @(theta, c) (g * sin(theta))/(1 + c); 
