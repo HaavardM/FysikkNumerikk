@@ -11,11 +11,13 @@ C_kule = 2/5;
 C_skall = 2/3;
 C_sylinder = 1;
 C_values = [C_kule, C_skall, C_sylinder];
+C_descriptions = {'Kule', 'Kuleskall', 'Sylinder'};
+filenames = {'golf.mat', 'pingpong.mat', 'ring.mat'};
 
 %Plan konstanter
-DEG = 4.65;%Grader
+DEG = 4.9;%Grader
 THETA = deg2rad(DEG); %vinkel på plan i radianer 
-L = 1.29; % i meter - lengden på planet
+L = 1.1; % i meter - lengden på planet
 
 %Akselerasjon som funksjon av vinkel og konstant
 v_dot = @(theta, c) (g * sin(theta))/(1 + c); 
@@ -25,45 +27,92 @@ NUM_SIMS = numel(C_values);
 
 %Forhåndsallokerer minne
 for i = 1 : NUM_SIMS
-   t(i, :) = zeros(1, endTime / h);
-   v(i, :) = zeros(1, endTime / h);
-   s(i, :) = zeros(1, endTime / h); 
+   t_num(i) = {zeros(1, endTime / h)};
+   v_num(i) = {zeros(1, endTime / h)};
+   s_num(i) = {zeros(1, endTime / h)};
 end
 
 %Løser differensialligningen numerisk med faste tidssteg (h)
 
 for simNr = 1 : NUM_SIMS
     for i = 1 : endTime / h
-       v(simNr, i + 1) = v(simNr, i) + h*v_dot(THETA, C_values(simNr));
-       s(simNr, i + 1) = s(simNr, i) + h*v(simNr, i);
-       t(simNr, i + 1) = t(simNr, i) + h;
+       v_num{simNr}(i + 1) = v_num{simNr}(i) + h*v_dot(THETA, C_values(simNr));
+       s_num{simNr}(i + 1) = s_num{simNr}(i) + h*v_num{simNr}(i);
+       t_num{simNr}(i + 1) = t_num{simNr}(i) + h;
+       if s_num{simNr}(i + 1) >= L
+           s_num{simNr} = s_num{simNr}(1 : i + 1);
+           v_num{simNr} = v_num{simNr}(1 : i + 1);
+           t_num{simNr} = t_num{simNr}(1 : i + 1);
+           break;
+       end
     end
 end
 
 for i = 1 : NUM_SIMS
     %Lager en figur og plotter dataen
-    figure(i);
+    figure('Name', C_descriptions{i});
     clf(i)
-    plot(t(i, :), v(i, :));
+    plot(t_num{i}, v_num{i});
     hold on;
-    plot(t(i, :), s(i, :));
+    plot(t_num{i}, s_num{i});
     xlabel('Tid [s]');
     ylabel('v(t) [m/s] / s(t) [m]');
     legend('Hastighet', 'Posisjon');
-    title(sprintf('Numerisk løsning av C = %.2f', C_values(i)));
+    title(sprintf('Numerisk løsning av C = %.2f - %s', C_values(i), C_descriptions{i}));
 end
 
-figure(NUM_SIMS + 1);
-legendText = cell(NUM_SIMS + 1, 1);
+figure('Name', 'Sammenligning av treghetsmoment - numerisk');
+legendText = cell(NUM_SIMS, 1);
 for i = 1 : NUM_SIMS
-   plot(t(i, :), s(i, :));
+   plot(t_num{i}, s_num{i});
    hold on;
-   legendText{i} = sprintf('C = %.1f', C_values(i));
+   legendText{i} = sprintf('C_{%s}=%.1f',C_descriptions{i}, C_values(i));
 end
-title('Sammenlignging av posisjon per tid');
-legendText{NUM_SIMS + 1} = 'Slutt';
-plot(t(1, :), ones(1, numel(t(1, :)))*L); %Skjæringslinje
-legend(legendText);
+title('Sammenlignging av treghetsmoment - numerisk');
+legend(legendText, 'Location', 'northwest');
+xlabel('Tid [s]');
+ylabel('Posisjon [m]');
+print -depsc numerical
+
+
+
+
+figure('Name', 'Sammenligning av treghetsmoment - forsøk');
+for i = 1 : numel(filenames)
+    data = load(filenames{i});
+    data = struct2cell(data);
+    data = vecs2avg(data);
+    ix = find(data(2, :) >= L, 1, 'first');
+    data = data(:, 1 : ix);
+    plot(data(1, :), data(2, :))
+    hold on;
+end
+title('Sammenlignings av treghetsmoment - forsøk');
+lgd = legend(C_descriptions, 'Location', 'northwest');
+xlabel('Tid [s]');
+ylabel('Posisjon [m]');
+print -depsc experiment
+
+
+figure('Name', 'Sammenligning av treghetsmoment - forsøk og numerikk');
+for i = 1 : numel(filenames)
+    data = load(filenames{i});
+    data = struct2cell(data);
+    data = vecs2avg(data);
+    ix = find(data(2, :) >= L, 1, 'first');
+    data = data(:, 1 : ix);
+    subplot(numel(filenames), 1, i);
+    plot(data(1, :), data(2, :));
+    title(C_descriptions{i});
+    hold on;
+    plot(t_num{i}, s_num{i});
+    legend({'Eksperiment', 'Numerisk'}, 'Location', 'northwest');
+    xlabel('Tid [s]');
+    ylabel('Posisjon[m]');
+end
+print -depsc num_exp
+
+
 
 
 
