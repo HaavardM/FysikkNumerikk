@@ -17,7 +17,7 @@ filenames = {'golf.mat', 'pingpong.mat', 'ring.mat'};
 %Plan konstanter
 DEG = 4.9;%Grader
 THETA = deg2rad(DEG); %vinkel på plan i radianer 
-L = 1.1; % i meter - lengden på planet
+L = 1.0; % i meter - lengden på planet
 
 %Akselerasjon som funksjon av vinkel og konstant
 v_dot = @(theta, c) (g * sin(theta))/(1 + c); 
@@ -61,6 +61,7 @@ for i = 1 : NUM_SIMS
     title(sprintf('Numerisk løsning av C = %.2f - %s', C_values(i), C_descriptions{i}));
 end
 
+%Sammenligning av treghetsmoment - numerisk
 figure('Name', 'Sammenligning av treghetsmoment - numerisk');
 legendText = cell(NUM_SIMS, 1);
 for i = 1 : NUM_SIMS
@@ -76,14 +77,19 @@ print -depsc numerical
 
 
 
-
+%Sammenligning av treghetsmoment i forsøk
 figure('Name', 'Sammenligning av treghetsmoment - forsøk');
 for i = 1 : numel(filenames)
+    %Load data from mat files
     data = load(filenames{i});
+    %Convert data from structure to cell
     data = struct2cell(data);
+    %Calucalte average position based on plots
     data = vecs2avg(data);
+    %Find first positionelement larger than L and remove everything after
     ix = find(data(2, :) >= L, 1, 'first');
     data = data(:, 1 : ix);
+    %Plot the data
     plot(data(1, :), data(2, :))
     hold on;
 end
@@ -93,12 +99,16 @@ xlabel('Tid [s]');
 ylabel('Posisjon [m]');
 print -depsc experiment
 
-
+%Sammenligning av resultater fra numerikk og forsøk
 figure('Name', 'Sammenligning av treghetsmoment - forsøk og numerikk');
 for i = 1 : numel(filenames)
+    %Load data from mat files
     data = load(filenames{i});
+    %Convert from structure to cell
     data = struct2cell(data);
+    %Calculate average
     data = vecs2avg(data);
+    %Find first element larger than L, remove everything after
     ix = find(data(2, :) >= L, 1, 'first');
     data = data(:, 1 : ix);
     subplot(numel(filenames), 1, i);
