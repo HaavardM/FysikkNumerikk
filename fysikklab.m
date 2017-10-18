@@ -69,7 +69,7 @@ for i = 1 : NUM_SIMS
    hold on;
    legendText{i} = sprintf('C_{%s}=%.1f',C_descriptions{i}, C_values(i));
 end
-title('Sammenlignging av treghetsmoment - numerisk');
+title('Sammenligning av treghetsmoment - numerisk');
 legend(legendText, 'Location', 'northwest');
 xlabel('Tid [s]');
 ylabel('Posisjon [m]');
@@ -93,7 +93,7 @@ for i = 1 : numel(filenames)
     plot(data(1, :), data(2, :))
     hold on;
 end
-title('Sammenlignings av treghetsmoment - forsøk');
+title('Sammenligning av treghetsmoment - forsøk');
 lgd = legend(C_descriptions, 'Location', 'northwest');
 xlabel('Tid [s]');
 ylabel('Posisjon [m]');
