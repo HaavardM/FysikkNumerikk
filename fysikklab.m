@@ -1,38 +1,81 @@
 clear all; close all; clc;
 
+%Hva skal plottes?
+PLOT_SIMPLE = false;
+
 %Simuleringsparametre
 h = 0.01; %Tidssteg
 endTime = 3;
 %Tyngeakselerasjon
 g = 9.81;
 
-%Konstanter for forsøkene:
-C_kule = 2/5;
+%Plan konstanter
+USE_CALCULATED_THETA = true;
+DEG = 3.65;%Grader - ignorert hvis ^ er true
+THETA = deg2rad(DEG); %vinkel pÃ¥ plan i radianer 
+L = 1.0; % i meter - lengden pÃ¥ planet
+
+%Teoretiske treghetsmomenter
 C_skall = 2/3;
 C_sylinder = 1;
-C_values = [C_kule, C_skall, C_sylinder];
-C_descriptions = {'Kule', 'Kuleskall', 'Sylinder'};
-filenames = {'golf.mat', 'pingpong.mat', 'ring.mat'};
-
-%Plan konstanter
-DEG = 4.9;%Grader
-THETA = deg2rad(DEG); %vinkel på plan i radianer 
-L = 1.0; % i meter - lengden på planet
 
 %Akselerasjon som funksjon av vinkel og konstant
 v_dot = @(theta, c) (g * sin(theta))/(1 + c); 
 
+%Vinkel basert pÃ¥ pingpong forsÃ¸k
+data = load('pingpong.mat');
+data = struct2cell(data);
+data = vecs2avg(data);
+ix = find(data(2, :) >= L, 1, 'first');
+data = data(:, 1 : ix);
+val = polyfit(data(1, :), data(2, :), 2);
+acc = 2*val(1);
+exptheta = asin((acc * (1 + C_skall))/g);
+
+if USE_CALCULATED_THETA; THETA = exptheta; end
+
+fprintf('Eksperimentell vinkel = %.2f\n', rad2deg(exptheta));
+
+%Utregning av golfball treghetsmoment
+
+data = load('golf.mat');
+data = struct2cell(data);
+data = vecs2avg(data);
+ix = find(data(2, :) >= L, 1, 'first');
+data = data(:, 1 : ix);
+val = polyfit(data(1, :), data(2, :), 2);
+acc = 2*val(1);
+
+golftreg = (g * sin(exptheta) / acc) - 1;
+fprintf('Golfball treghetsmoment = %.4f\n', golftreg);
+
+%Konstanter for numerikken:
+C_kule = golftreg;
+C_values = [C_skall, C_sylinder, C_kule];
+C_descriptions = {'Kuleskall', 'Sylinder', 'Golfball'};
+filenames = {'pingpong.mat', 'ring.mat', 'golf.mat'};
+
 %Antall simuleringer
 NUM_SIMS = numel(C_values);
 
-%Forhåndsallokerer minne
+%ForhÃ¥ndsallokerer minne
 for i = 1 : NUM_SIMS
    t_num(i) = {zeros(1, endTime / h)};
    v_num(i) = {zeros(1, endTime / h)};
    s_num(i) = {zeros(1, endTime / h)};
 end
 
-%Løser differensialligningen numerisk med faste tidssteg (h)
+%Find start velocity from experiment
+for i = 1 : numel(filenames)
+   data = load(filenames{i});
+   data = struct2cell(data);
+   data = vecs2avg(data);
+   vel = (data(2, 2) - data(2, 1))/(data(1, 2) - data(1, 1));
+   v_num{i}(1) = vel;
+   s_num{i}(1) = data(2, 1);
+end
+
+%LÃ¸ser differensialligningen numerisk med faste tidssteg (h)
 
 for simNr = 1 : NUM_SIMS
     for i = 1 : endTime / h
@@ -47,18 +90,19 @@ for simNr = 1 : NUM_SIMS
        end
     end
 end
-
-for i = 1 : NUM_SIMS
-    %Lager en figur og plotter dataen
-    figure('Name', C_descriptions{i});
-    clf(i)
-    plot(t_num{i}, v_num{i});
-    hold on;
-    plot(t_num{i}, s_num{i});
-    xlabel('Tid [s]');
-    ylabel('v(t) [m/s] / s(t) [m]');
-    legend('Hastighet', 'Posisjon');
-    title(sprintf('Numerisk løsning av C = %.2f - %s', C_values(i), C_descriptions{i}));
+if PLOT_SIMPLE
+    for i = 1 : NUM_SIMS
+        %Lager en figur og plotter dataen
+        figure('Name', C_descriptions{i});
+        clf(i)
+        plot(t_num{i}, v_num{i});
+        hold on;
+        plot(t_num{i}, s_num{i});
+        xlabel('Tid [s]');
+        ylabel('v(t) [m/s] / s(t) [m]');
+        legend('Hastighet', 'Posisjon');
+        title(sprintf('Numerisk lÃ¸sning av C = %.2f - %s', C_values(i), C_descriptions{i}));
+    end
 end
 
 %Sammenligning av treghetsmoment - numerisk
@@ -77,8 +121,8 @@ print -depsc numerical
 
 
 
-%Sammenligning av treghetsmoment i forsøk
-figure('Name', 'Sammenligning av treghetsmoment - forsøk');
+%Sammenligning av treghetsmoment i forsÃ¸k
+figure('Name', 'Sammenligning av treghetsmoment - forsÃ¸k');
 for i = 1 : numel(filenames)
     %Load data from mat files
     data = load(filenames{i});
@@ -93,14 +137,14 @@ for i = 1 : numel(filenames)
     plot(data(1, :), data(2, :))
     hold on;
 end
-title('Sammenligning av treghetsmoment - forsøk');
+title('Sammenligning av treghetsmoment - forsÃ¸k');
 lgd = legend(C_descriptions, 'Location', 'northwest');
 xlabel('Tid [s]');
 ylabel('Posisjon [m]');
 print -depsc experiment
 
-%Sammenligning av resultater fra numerikk og forsøk
-figure('Name', 'Sammenligning av treghetsmoment - forsøk og numerikk');
+%Sammenligning av resultater fra numerikk og forsÃ¸k
+figure('Name', 'Sammenligning av treghetsmoment - forsÃ¸k og numerikk');
 for i = 1 : numel(filenames)
     %Load data from mat files
     data = load(filenames{i});
@@ -121,6 +165,7 @@ for i = 1 : numel(filenames)
     ylabel('Posisjon[m]');
 end
 print -depsc num_exp
+
 
 
 
